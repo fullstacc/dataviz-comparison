@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 10 MLB Teams by Wins</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <div id="mlb-chart" style="width:100%;height:100%;"></div>
+    <script>
+        const csvUrl = 'https://gist.githubusercontent.com/fullstacc/98d5f1a17165b3f9f4790845671efdc6/raw/697d5f8aa08aca22f423f8efe8993630e062145e/mlb-2023.csv';
+
+        fetch(csvUrl)
+            .then(response => response.text())
+            .then(csvData => {
+                const data = Plotly.d3.csv.parse(csvData);
+                const winsCount = {};
+
+                data.forEach(d => {
+                    const winner = d.score1 > d.score2 ? d.team1 : d.team2;
+                    if (winsCount[winner]) {
+                        winsCount[winner]++;
+                    } else {
+                        winsCount[winner] = 1;
+                    }
+                });
+
+                const teamsData = Object.entries(winsCount)
+                    .map(([team, wins]) => ({ team, wins }))
+                    .sort((a, b) => b.wins - a.wins)
+                    .slice(0, 10);
+
+                const trace = {
+                    x: teamsData.map(d => d.team),
+                    y: teamsData.map(d => d.wins),
+                    type: 'bar',
+                    marker: {
+                        color: 'steelblue'
+                    }
+                };
+
+                const layout = {
+                    title: 'Top 10 MLB Teams by Wins, April 18 2023',
+                    xaxis: { title: 'Teams' },
+                    yaxis: { title: 'Number of Wins' },
+                    font: { family: 'Roboto, sans-serif' }
+                };
+
+                Plotly.newPlot('mlb-chart', [trace], layout);
+            })
+            .catch(error => console.error("Error loading or processing the data:", error));
+    </script>
+</body>
+
+</html>
