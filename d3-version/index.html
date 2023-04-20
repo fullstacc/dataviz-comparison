@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top 10 MLB Teams by Wins</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet" />
+
+    <style>
+        .bar {
+            fill: steelblue;
+        }
+
+        .bar:hover {
+            fill: darkorange;
+        }
+
+        .axis {
+            font: 10px sans-serif;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .title {
+            font-family: "Roboto", sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // Set dimensions for the chart
+        const margin = { top: 80, right: 20, bottom: 30, left: 40 },
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        // Set x and y scales
+        const x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
+            y = d3.scaleLinear().range([height, 0]);
+
+        // Set x and y axes
+        const xAxis = d3.axisBottom(x),
+            yAxis = d3.axisLeft(y).ticks(10);
+
+        // Create the SVG element
+        const svg = d3
+            .select("body")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        // Add the title
+        svg
+            .append("text")
+            .attr("class", "title")
+            .attr("x", width / 2)
+            .attr("y", -margin.top / 2)
+            .attr("dy", "1em")
+            .text("Top 10 MLB Teams by Wins, April 18 2023");
+
+        // Load and process the data
+        d3.csv(
+            "https://gist.githubusercontent.com/fullstacc/98d5f1a17165b3f9f4790845671efdc6/raw/697d5f8aa08aca22f423f8efe8993630e062145e/mlb-2023.csv"
+        )
+            .then((data) => {
+                const winsCount = {};
+
+                data.forEach((d) => {
+                    const winner = d.score1 > d.score2 ? d.team1 : d.team2;
+                    if (winsCount[winner]) {
+                        winsCount[winner]++;
+                    } else {
+                        winsCount[winner] = 1;
+                    }
+                });
+
+                const teamsData = Object.entries(winsCount)
+                    .map(([team, wins]) => ({ team, wins }))
+                    .sort((a, b) => b.wins - a.wins)
+                    .slice(0, 10);
+
+                x.domain(teamsData.map((d) => d.team));
+                y.domain([0, d3.max(teamsData, (d) => d.wins)]);
+
+                svg
+                    .append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(xAxis);
+
+                svg.append("g").attr("class", "y axis").call(yAxis);
+
+                svg
+                    .selectAll(".bar")
+                    .data(teamsData)
+                    .enter()
+                    .append("rect")
+                    .attr("class", "bar")
+                    .attr("x", (d) => x(d.team))
+                    .attr("width", x.bandwidth())
+                    .attr("y", (d) => y(d.wins))
+                    .attr("height", (d) => height - y(d.wins));
+            })
+            .catch((error) => {
+                console.error("Error loading or processing the data:", error);
+            });
+    </script>
+</body>
+
+</html>
